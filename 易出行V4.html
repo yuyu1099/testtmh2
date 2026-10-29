@@ -1,0 +1,1812 @@
+<!DOCTYPE html>
+<html lang="zh-HK">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.5">
+    <title>易出行 · 輕鐵到站 · 氣象衛星 · 即時天氣</title>
+    <!-- Font Awesome 6 -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
+    <style>
+        /* ===== 全域與夜間模式 ===== */
+        * {
+            box-sizing: border-box;
+            font-family: system-ui, -apple-system, 'Segoe UI', Roboto, 'Helvetica Neue', sans-serif;
+        }
+        body {
+            background: #eef3f7;
+            margin: 0;
+            min-height: 100vh;
+            display: flex;
+            justify-content: center;
+            padding: 20px 24px;
+            transition: background 0.3s ease;
+        }
+        body.night-mode {
+            background: #1a1f2b;
+        }
+
+        .container {
+            width: 100%;
+            max-width: 1600px;
+            background: white;
+            border-radius: 24px;
+            box-shadow: 0 8px 30px rgba(0, 20, 30, 0.10);
+            padding: 22px 28px 26px;
+            transition: all 0.3s ease;
+            transform-origin: top left;
+            display: flex;
+            flex-direction: column;
+        }
+        body.night-mode .container {
+            background: #1e2636;
+            box-shadow: 0 8px 30px rgba(0, 0, 0, 0.4);
+        }
+
+        .content-wrapper {
+            display: flex;
+            gap: 24px;
+            align-items: stretch;
+            flex: 1;
+        }
+        .left-content {
+            width: 100%;
+            flex-shrink: 0;
+            display: flex;
+            flex-direction: column;
+        }
+
+        /* ===== 三卡片共用 ===== */
+        .card {
+            background: #ffffff;
+            border-radius: 18px;
+            box-shadow: 0 4px 16px rgba(0, 20, 40, 0.08);
+            padding: 20px 20px 16px;
+            border: 1px solid #dee9f2;
+            transition: all 0.3s ease;
+            display: flex;
+            flex-direction: column;
+            height: 600px;
+            flex: 1;
+            min-width: 0;
+            position: relative;
+        }
+        body.night-mode .card {
+            background: #242d40;
+            border-color: #37475f;
+            box-shadow: 0 4px 16px rgba(0, 0, 0, 0.2);
+        }
+
+        .card-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            border-bottom: 1.5px solid #dce5ed;
+            padding-bottom: 10px;
+            margin-bottom: 12px;
+            transition: border-color 0.3s ease;
+            flex-shrink: 0;
+        }
+        body.night-mode .card-header {
+            border-bottom-color: #37475f;
+        }
+        .card-title {
+            font-size: 1.2rem;
+            font-weight: 600;
+            color: #0b2a3b;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            transition: color 0.3s ease;
+        }
+        body.night-mode .card-title {
+            color: #d6e4f0;
+        }
+        .card-sub {
+            color: #2c5f7a;
+            font-size: 0.7rem;
+            font-weight: 450;
+            background: #e9f3f8;
+            padding: 2px 12px;
+            border-radius: 30px;
+            transition: all 0.3s ease;
+        }
+        body.night-mode .card-sub {
+            color: #8ab4d0;
+            background: #2a344a;
+        }
+
+        /* ===== 卡片底部控制區 ===== */
+        .card-footer {
+            margin-top: auto;
+            padding-top: 10px;
+            border-top: 1px solid #dce5ed;
+            display: flex;
+            flex-direction: column;
+            gap: 8px;
+            flex-shrink: 0;
+            transition: border-color 0.3s ease;
+        }
+        body.night-mode .card-footer {
+            border-top-color: #37475f;
+        }
+
+        .card-footer .footer-row {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            flex-wrap: wrap;
+            gap: 6px;
+        }
+        .card-footer .refresh-btn {
+            background: transparent;
+            border: 1px solid #cbdce9;
+            border-radius: 20px;
+            padding: 3px 14px;
+            font-size: 0.7rem;
+            font-weight: 500;
+            color: #1e4059;
+            cursor: pointer;
+            transition: all 0.2s;
+            display: flex;
+            align-items: center;
+            gap: 4px;
+        }
+        .card-footer .refresh-btn:hover {
+            background: #d0e2f0;
+            border-color: #7fa3bc;
+        }
+        body.night-mode .card-footer .refresh-btn {
+            color: #8ab4d0;
+            border-color: #3a4a62;
+        }
+        body.night-mode .card-footer .refresh-btn:hover {
+            background: #2a344a;
+            border-color: #5a8aaa;
+        }
+        .card-footer .update-info {
+            font-size: 0.6rem;
+            color: #7a9bb8;
+        }
+        body.night-mode .card-footer .update-info {
+            color: #8ab4d0;
+        }
+
+        /* ===== 站點選擇器（放在輕鐵卡片底部） ===== */
+        .station-selector-wrap {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            width: 100%;
+        }
+        .station-selector-wrap label {
+            font-size: 0.8rem;
+            font-weight: 500;
+            color: #1e4059;
+            white-space: nowrap;
+            transition: color 0.3s ease;
+        }
+        body.night-mode .station-selector-wrap label {
+            color: #8ab4d0;
+        }
+        .station-selector-wrap select {
+            background: white;
+            border: 1px solid #cbdce9;
+            border-radius: 20px;
+            padding: 6px 12px;
+            font-size: 0.85rem;
+            font-weight: 500;
+            color: #003153;
+            cursor: pointer;
+            outline: none;
+            transition: all 0.3s ease;
+            flex: 1;
+            min-width: 0;
+            min-height: 36px;
+        }
+        body.night-mode .station-selector-wrap select {
+            background: #1e2636;
+            border-color: #3a4a62;
+            color: #c5d9e8;
+        }
+        body.night-mode .station-selector-wrap select option {
+            background: #1e2636;
+            color: #c5d9e8;
+        }
+        .station-selector-wrap select:focus {
+            border-color: #7fa3bc;
+            box-shadow: 0 0 0 2px rgba(127, 163, 188, 0.3);
+        }
+
+        /* ===== 輕鐵卡片 ===== */
+        .station-card .platforms-scroll {
+            flex: 1;
+            overflow-y: auto;
+            padding-right: 4px;
+            scrollbar-width: thin;
+            min-height: 0;
+        }
+        .station-card .platforms-scroll::-webkit-scrollbar {
+            width: 5px;
+        }
+        .station-card .platforms-scroll::-webkit-scrollbar-track {
+            background: #e8edf3;
+            border-radius: 10px;
+        }
+        .station-card .platforms-scroll::-webkit-scrollbar-thumb {
+            background: #b0c8db;
+            border-radius: 10px;
+        }
+        body.night-mode .station-card .platforms-scroll::-webkit-scrollbar-track {
+            background: #1a2233;
+        }
+        body.night-mode .station-card .platforms-scroll::-webkit-scrollbar-thumb {
+            background: #3a4a62;
+        }
+
+        .platforms-row {
+            display: flex;
+            flex-direction: column;
+            gap: 14px;
+        }
+        .platform-block {
+            background: #f6faff;
+            border-radius: 14px;
+            padding: 12px 14px 10px;
+            border: 1px solid #dee9f2;
+            transition: all 0.3s ease;
+        }
+        body.night-mode .platform-block {
+            background: #1a2233;
+            border-color: #2f3f58;
+        }
+        .platform-title {
+            font-weight: 600;
+            font-size: 1rem;
+            color: #004466;
+            background: #dceaf5;
+            display: inline-block;
+            padding: 0 18px 0 14px;
+            border-radius: 30px;
+            margin-bottom: 10px;
+            line-height: 2;
+            transition: all 0.3s ease;
+        }
+        body.night-mode .platform-title {
+            color: #8ab4d0;
+            background: #2a344a;
+        }
+        .train-list {
+            display: flex;
+            flex-direction: column;
+            gap: 8px;
+        }
+        .train-item {
+            background: white;
+            border-radius: 10px;
+            padding: 6px 12px;
+            box-shadow: 0 1px 4px rgba(0, 20, 30, 0.04);
+            border-left: 4px solid #0077a3;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            gap: 6px 10px;
+            font-size: 0.95rem;
+            transition: all 0.3s ease;
+            min-height: 32px;
+        }
+        body.night-mode .train-item {
+            background: #1e2636;
+            box-shadow: 0 1px 4px rgba(0, 0, 0, 0.3);
+            border-left-color: #4a8bb0;
+        }
+        .train-item.special {
+            border-left-color: #d97706;
+            background: #fffbeb;
+        }
+        body.night-mode .train-item.special {
+            border-left-color: #d97706;
+            background: #2a2a1a;
+        }
+        .train-route {
+            font-weight: 650;
+            font-size: 1rem;
+            background: #e5eff6;
+            padding: 0 10px;
+            border-radius: 16px;
+            line-height: 1.7;
+            color: #003153;
+            min-width: 50px;
+            text-align: center;
+            transition: all 0.3s ease;
+        }
+        body.night-mode .train-route {
+            background: #2f3f58;
+            color: #c5d9e8;
+        }
+        .train-dest {
+            flex: 1;
+            margin: 0 4px 0 8px;
+            font-weight: 500;
+            color: #16445f;
+            font-size: 0.9rem;
+            white-space: nowrap;
+            transition: color 0.3s ease;
+        }
+        body.night-mode .train-dest {
+            color: #b0cce0;
+        }
+        .train-time {
+            background: #e3eef9;
+            padding: 1px 14px;
+            border-radius: 30px;
+            font-weight: 550;
+            font-size: 0.85rem;
+            color: #003d5e;
+            white-space: nowrap;
+            transition: all 0.3s ease;
+            flex-shrink: 0;
+        }
+        body.night-mode .train-time {
+            background: #2a344a;
+            color: #8ab4d0;
+        }
+        .no-train {
+            color: #386f8a;
+            font-size: 0.95rem;
+            padding: 8px 0 4px 6px;
+            opacity: 0.7;
+            font-style: italic;
+            transition: color 0.3s ease;
+        }
+        body.night-mode .no-train {
+            color: #7a9bb8;
+        }
+        .train-length,
+        .extra-train-hint {
+            display: none;
+        }
+        .train-remark {
+            width: 100%;
+            margin-top: 2px;
+            font-size: 0.7rem;
+            color: #6b4f2c;
+            background: #f2e6d8;
+            padding: 1px 12px;
+            border-radius: 30px;
+            display: inline-block;
+            transition: all 0.3s ease;
+        }
+        body.night-mode .train-remark {
+            color: #b8a080;
+            background: #2a241a;
+        }
+
+        /* ===== Windy 地圖卡片 ===== */
+        .windy-card .windy-map-container {
+            flex: 1;
+            min-height: 0;
+            border-radius: 12px;
+            overflow: hidden;
+            position: relative;
+        }
+        .windy-card .windy-map-container iframe {
+            width: 100%;
+            height: 100%;
+            border: none;
+            display: block;
+        }
+
+        .windy-card .windy-controls {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            margin-top: 6px;
+            flex-shrink: 0;
+            flex-wrap: wrap;
+        }
+        .windy-card .windy-controls label {
+            font-size: 0.7rem;
+            font-weight: 500;
+            color: #1e4059;
+            transition: color 0.3s ease;
+        }
+        body.night-mode .windy-card .windy-controls label {
+            color: #8ab4d0;
+        }
+        .windy-card .windy-controls select {
+            background: white;
+            border: 1px solid #cbdce9;
+            border-radius: 16px;
+            padding: 2px 10px;
+            font-size: 0.75rem;
+            font-weight: 500;
+            color: #003153;
+            cursor: pointer;
+            outline: none;
+            transition: all 0.3s ease;
+            min-height: 30px;
+        }
+        body.night-mode .windy-card .windy-controls select {
+            background: #1e2636;
+            border-color: #3a4a62;
+            color: #c5d9e8;
+        }
+        body.night-mode .windy-card .windy-controls select option {
+            background: #1e2636;
+            color: #c5d9e8;
+        }
+
+        .windy-card .windy-controls .refresh-btn {
+            background: transparent;
+            border: 1px solid #cbdce9;
+            border-radius: 20px;
+            padding: 3px 14px;
+            font-size: 0.7rem;
+            font-weight: 500;
+            color: #1e4059;
+            cursor: pointer;
+            transition: all 0.2s;
+            display: flex;
+            align-items: center;
+            gap: 4px;
+            min-height: 30px;
+        }
+        .windy-card .windy-controls .refresh-btn:hover {
+            background: #d0e2f0;
+            border-color: #7fa3bc;
+        }
+        body.night-mode .windy-card .windy-controls .refresh-btn {
+            color: #8ab4d0;
+            border-color: #3a4a62;
+        }
+        body.night-mode .windy-card .windy-controls .refresh-btn:hover {
+            background: #2a344a;
+            border-color: #5a8aaa;
+        }
+
+        .windy-card .windy-footer-controls {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            flex-wrap: wrap;
+            gap: 6px;
+            padding-top: 4px;
+            border-top: none;
+        }
+        .windy-card .windy-footer-controls .refresh-group {
+            display: flex;
+            align-items: center;
+            gap: 6px;
+        }
+        .windy-card .windy-footer-controls .refresh-group label {
+            font-size: 0.6rem;
+            font-weight: 500;
+            color: #5a8aaa;
+            transition: color 0.3s ease;
+        }
+        body.night-mode .windy-card .windy-footer-controls .refresh-group label {
+            color: #8ab4d0;
+        }
+        .windy-card .windy-footer-controls .refresh-group select {
+            background: white;
+            border: 1px solid #cbdce9;
+            border-radius: 14px;
+            padding: 2px 8px;
+            font-size: 0.65rem;
+            font-weight: 500;
+            color: #003153;
+            cursor: pointer;
+            outline: none;
+            transition: all 0.3s ease;
+            min-height: 28px;
+        }
+        body.night-mode .windy-card .windy-footer-controls .refresh-group select {
+            background: #1e2636;
+            border-color: #3a4a62;
+            color: #c5d9e8;
+        }
+        body.night-mode .windy-card .windy-footer-controls .refresh-group select option {
+            background: #1e2636;
+            color: #c5d9e8;
+        }
+        .windy-card .windy-footer-controls .update-info {
+            font-size: 0.6rem;
+            color: #7a9bb8;
+            transition: color 0.3s ease;
+        }
+        body.night-mode .windy-card .windy-footer-controls .update-info {
+            color: #8ab4d0;
+        }
+
+        /* ===== 天氣卡片 ===== */
+        .weather-card .weather-clock {
+            text-align: center;
+            font-size: 2.2rem;
+            font-weight: 700;
+            color: #0a2535;
+            letter-spacing: 2px;
+            padding: 4px 0 8px 0;
+            transition: color 0.3s ease;
+            flex-shrink: 0;
+        }
+        body.night-mode .weather-card .weather-clock {
+            color: #d6e4f0;
+        }
+        .weather-card .weather-clock .clock-icon {
+            font-size: 1.2rem;
+            color: #5a8aaa;
+            margin-right: 8px;
+            transition: color 0.3s ease;
+        }
+        body.night-mode .weather-card .weather-clock .clock-icon {
+            color: #7a9bb8;
+        }
+        .weather-card .weather-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 10px;
+            margin-bottom: 12px;
+            flex-shrink: 0;
+        }
+        .weather-card .weather-info-box {
+            background: rgba(255, 255, 255, 0.5);
+            border-radius: 16px;
+            padding: 10px 12px 8px;
+            border: 1px solid rgba(255, 255, 255, 0.6);
+            transition: all 0.3s ease;
+        }
+        body.night-mode .weather-card .weather-info-box {
+            background: #1a2233;
+            border-color: #2f3f58;
+        }
+        .weather-card .weather-info-box .label {
+            font-size: 0.6rem;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            color: #2e577a;
+            opacity: 0.8;
+            display: flex;
+            align-items: center;
+            gap: 4px;
+            transition: color 0.3s ease;
+        }
+        body.night-mode .weather-card .weather-info-box .label {
+            color: #8ab4d0;
+        }
+        .weather-card .weather-info-box .value {
+            font-size: 1.4rem;
+            font-weight: 600;
+            color: #0a2535;
+            line-height: 1.2;
+            transition: color 0.3s ease;
+        }
+        body.night-mode .weather-card .weather-info-box .value {
+            color: #c5d9e8;
+        }
+        .weather-card .weather-info-box .value small {
+            font-size: 0.7rem;
+            font-weight: 400;
+            color: #3f6d8c;
+            margin-left: 4px;
+            transition: color 0.3s ease;
+        }
+        body.night-mode .weather-card .weather-info-box .value small {
+            color: #7a9bb8;
+        }
+        .weather-card .weather-warning-area {
+            background: #fcf3e8;
+            border-radius: 16px;
+            padding: 12px 14px 10px;
+            border-left: 4px solid #e67e22;
+            transition: all 0.3s ease;
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            overflow-y: auto;
+            min-height: 0;
+        }
+        body.night-mode .weather-card .weather-warning-area {
+            background: #2a241a;
+            border-left-color: #d97706;
+        }
+        .weather-card .weather-warning-area h3 {
+            font-size: 0.8rem;
+            font-weight: 600;
+            color: #a04000;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            margin-bottom: 6px;
+            flex-shrink: 0;
+            transition: color 0.3s ease;
+        }
+        body.night-mode .weather-card .weather-warning-area h3 {
+            color: #e8a090;
+        }
+        .weather-card .weather-warning-area h3 i {
+            font-size: 1rem;
+            color: #d35400;
+        }
+        .weather-card .weather-msg-block {
+            background: white;
+            border-radius: 12px;
+            padding: 6px 12px;
+            margin-top: 4px;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            flex-shrink: 0;
+            transition: all 0.3s ease;
+        }
+        body.night-mode .weather-card .weather-msg-block {
+            background: #1e2636;
+        }
+        .weather-card .weather-msg-block .icon-large {
+            font-size: 1.4rem;
+            width: 32px;
+            text-align: center;
+            flex-shrink: 0;
+        }
+        .weather-card .weather-msg-block .typhoon-number {
+            font-size: 1.8rem;
+            font-weight: 900;
+            color: #000000;
+            line-height: 1.2;
+            font-family: 'Segoe UI', Roboto, Arial, sans-serif;
+        }
+        body.night-mode .weather-card .weather-msg-block .typhoon-number {
+            color: #d6e4f0;
+        }
+        .weather-card .weather-msg-block .msg-text {
+            flex: 1;
+            color: #1a3c52;
+            font-size: 0.75rem;
+            line-height: 1.4;
+            transition: color 0.3s ease;
+        }
+        body.night-mode .weather-card .weather-msg-block .msg-text {
+            color: #b0cce0;
+        }
+        .weather-card .weather-msg-block .msg-text p {
+            margin: 2px 0;
+        }
+        .weather-card .special-tips-container {
+            margin-top: 6px;
+            padding: 6px 12px;
+            background: rgba(255, 255, 255, 0.6);
+            border-radius: 10px;
+            border-left: 3px solid #d97706;
+            transition: all 0.3s ease;
+            flex: 1;
+            overflow-y: auto;
+            scrollbar-width: thin;
+            min-height: 0;
+        }
+        body.night-mode .weather-card .special-tips-container {
+            background: #1a2233;
+            border-left-color: #d97706;
+        }
+        .weather-card .special-tips-container::-webkit-scrollbar {
+            width: 4px;
+        }
+        .weather-card .special-tips-container::-webkit-scrollbar-track {
+            background: transparent;
+        }
+        .weather-card .special-tips-container::-webkit-scrollbar-thumb {
+            background: #b0c8db;
+            border-radius: 10px;
+        }
+        body.night-mode .weather-card .special-tips-container::-webkit-scrollbar-thumb {
+            background: #3a4a62;
+        }
+        .weather-card .special-tips-container .tip-item {
+            font-size: 0.7rem;
+            color: #1a3c52;
+            line-height: 1.5;
+            padding: 2px 0;
+            transition: color 0.3s ease;
+        }
+        body.night-mode .weather-card .special-tips-container .tip-item {
+            color: #b0cce0;
+        }
+        .weather-card .special-tips-container .tip-item i {
+            color: #d97706;
+            margin-right: 6px;
+            font-size: 0.6rem;
+        }
+        .weather-card .weather-status-row { display: none; }
+        .weather-card .weather-footer { display: none; }
+        .weather-card .icon-rain-yellow { color: #FFD700; }
+        .weather-card .icon-rain-red { color: #FF0000; }
+        .weather-card .icon-rain-black { color: #000000; }
+        .weather-card .icon-default { color: #555; }
+        body.night-mode .weather-card .icon-default { color: #8ab4d0; }
+
+        /* ===== 底部控制欄 ===== */
+        .bottom-controls {
+            margin-top: 18px;
+            padding-top: 14px;
+            border-top: 1.5px solid #dce5ed;
+            transition: border-color 0.3s ease;
+            display: flex;
+            flex-wrap: wrap;
+            align-items: center;
+            justify-content: center;
+            gap: 12px 20px;
+            flex-shrink: 0;
+        }
+        body.night-mode .bottom-controls {
+            border-top-color: #37475f;
+        }
+        .bottom-controls .control-group {
+            display: flex;
+            align-items: center;
+            gap: 6px;
+            background: #f0f5fa;
+            padding: 4px 14px;
+            border-radius: 30px;
+            border: 1px solid #d5e2ed;
+            transition: all 0.3s ease;
+        }
+        body.night-mode .bottom-controls .control-group {
+            background: #2a344a;
+            border-color: #3a4a62;
+        }
+        .bottom-controls .control-group label {
+            font-size: 0.8rem;
+            font-weight: 500;
+            color: #1e4059;
+            transition: color 0.3s ease;
+        }
+        body.night-mode .bottom-controls .control-group label {
+            color: #8ab4d0;
+        }
+        .bottom-controls .control-group select {
+            background: white;
+            border: 1px solid #cbdce9;
+            border-radius: 20px;
+            padding: 4px 10px;
+            font-size: 0.85rem;
+            font-weight: 500;
+            color: #003153;
+            cursor: pointer;
+            outline: none;
+            transition: all 0.3s ease;
+            min-width: 80px;
+            min-height: 34px;
+        }
+        body.night-mode .bottom-controls .control-group select {
+            background: #1e2636;
+            border-color: #3a4a62;
+            color: #c5d9e8;
+        }
+        body.night-mode .bottom-controls .control-group select option {
+            background: #1e2636;
+            color: #c5d9e8;
+        }
+        .bottom-controls .control-group select:hover {
+            border-color: #7fa3bc;
+        }
+        .bottom-controls .btn-group {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+        .bottom-controls .night-toggle-btn {
+            background: #2c3e50;
+            border: none;
+            padding: 6px 18px;
+            border-radius: 30px;
+            font-weight: 550;
+            color: #f0f5fa;
+            cursor: pointer;
+            transition: all 0.15s;
+            font-size: 0.9rem;
+            display: flex;
+            align-items: center;
+            gap: 6px;
+            min-height: 36px;
+        }
+        .bottom-controls .night-toggle-btn:hover {
+            background: #1a2a3a;
+            transform: scale(0.97);
+        }
+        body.night-mode .bottom-controls .night-toggle-btn {
+            background: #d6e4f0;
+            color: #1e2636;
+        }
+        body.night-mode .bottom-controls .night-toggle-btn:hover {
+            background: #e8f0f8;
+        }
+
+        /* ===== 底部資訊欄 ===== */
+        .bottom-bar {
+            margin-top: 14px;
+            font-size: 0.8rem;
+            color: #2b6b8a;
+            border-top: 1px solid #d7e2ed;
+            padding-top: 12px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            flex-wrap: wrap;
+            transition: all 0.3s ease;
+            flex-shrink: 0;
+            width: 100%;
+        }
+        body.night-mode .bottom-bar {
+            color: #7a9bb8;
+            border-top-color: #37475f;
+        }
+        .bottom-bar .status-badge {
+            font-size: 0.75rem;
+            background: #b8d7e8;
+            padding: 2px 16px;
+            border-radius: 30px;
+            color: #003153;
+            transition: all 0.3s ease;
+        }
+        body.night-mode .bottom-bar .status-badge {
+            background: #2a344a;
+            color: #8ab4d0;
+        }
+        .bottom-bar .footer {
+            font-size: 0.65rem;
+            color: #3b6d88;
+            opacity: 0.7;
+            transition: color 0.3s ease;
+        }
+        body.night-mode .bottom-bar .footer {
+            color: #5a8aaa;
+        }
+
+        .left-content .update-time,
+        .left-content .footer { display: none; }
+        .error-msg {
+            background: #ffe6e0;
+            padding: 10px 16px;
+            border-radius: 14px;
+            color: #aa3a2a;
+            border-left: 4px solid #c0392b;
+            font-size: 0.95rem;
+            transition: all 0.3s ease;
+        }
+        body.night-mode .error-msg {
+            background: #2a1a1a;
+            color: #e8a090;
+            border-left-color: #c0392b;
+        }
+
+        /* ===== 三卡片並排 ===== */
+        .station-grid {
+            display: flex;
+            gap: 20px;
+            margin-top: 6px;
+            align-items: stretch;
+            flex: 1;
+        }
+        .station-grid .card {
+            flex: 1;
+            min-width: 0;
+        }
+
+        /* ===== 標題區域 ===== */
+        .header-area {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            flex-wrap: wrap;
+            margin-bottom: 14px;
+            border-bottom: 1.5px solid #dce5ed;
+            padding-bottom: 12px;
+            gap: 10px;
+            flex-shrink: 0;
+            transition: border-color 0.3s ease;
+        }
+        body.night-mode .header-area {
+            border-bottom-color: #37475f;
+        }
+
+        .header-left {
+            display: flex;
+            align-items: center;
+            flex-wrap: wrap;
+            gap: 6px 14px;
+        }
+
+        .main-title {
+            font-size: 1.7rem;
+            font-weight: 600;
+            margin: 0;
+            color: #0b2b3d;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            transition: color 0.3s ease;
+        }
+        body.night-mode .main-title {
+            color: #d6e4f0;
+        }
+
+        .subhead {
+            color: #2c5f7a;
+            font-size: .95rem;
+            font-weight: 450;
+            background: #e9f3f8;
+            padding: 4px 16px;
+            border-radius: 30px;
+            display: inline-block;
+            transition: all .3s ease;
+        }
+        body.night-mode .subhead {
+            color: #8ab4d0;
+            background: #2a344a;
+        }
+
+        @media (max-width: 1100px) {
+            .station-grid {
+                flex-wrap: wrap;
+            }
+            .station-grid .card {
+                flex: 1 1 calc(50% - 20px);
+                min-width: 280px;
+                height: 500px;
+            }
+            .bottom-controls {
+                gap: 10px 14px;
+            }
+            .bottom-controls .control-group select {
+                min-width: 70px;
+                font-size: 0.75rem;
+                padding: 3px 8px;
+            }
+            .bottom-controls .control-group {
+                padding: 3px 10px;
+            }
+        }
+        @media (max-width: 700px) {
+            .station-grid .card {
+                flex: 1 1 100%;
+                height: 400px;
+            }
+            .bottom-controls {
+                flex-direction: column;
+                align-items: stretch;
+                gap: 8px;
+            }
+            .bottom-controls .control-group {
+                justify-content: center;
+            }
+            .bottom-controls .btn-group {
+                justify-content: center;
+            }
+            .windy-card .windy-footer-controls {
+                flex-direction: column;
+                align-items: stretch;
+            }
+            .main-title {
+                font-size: 1.3rem;
+            }
+            .card-footer .footer-row {
+                flex-direction: column;
+                align-items: stretch;
+                gap: 4px;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container" id="appContainer">
+        <!-- 標題區域 -->
+        <div class="header-area">
+            <div class="header-left">
+                <h1 class="main-title">🚗 易出行</h1>
+                <span class="subhead">自選站點 · 氣象衛星 · 即時天氣</span>
+            </div>
+        </div>
+
+        <!-- 三卡片區域 -->
+        <div class="content-wrapper">
+            <div class="left-content">
+                <div id="stationContainer" class="station-grid">
+                    <!-- 動態由 JS 生成 -->
+                </div>
+            </div>
+        </div>
+
+        <!-- 底部控制欄 -->
+        <div class="bottom-controls">
+            <div class="control-group">
+                <label for="zoomSelect">🔍</label>
+                <select id="zoomSelect">
+                    <option value="50">50%</option><option value="60">60%</option><option value="70">70%</option>
+                    <option value="80">80%</option><option value="90">90%</option><option value="100" selected>100%</option>
+                    <option value="110">110%</option><option value="120">120%</option>
+                </select>
+            </div>
+            <div class="control-group">
+                <label for="heightSelect">📏</label>
+                <select id="heightSelect">
+                    <option value="400">400px</option><option value="450">450px</option><option value="500">500px</option>
+                    <option value="550">550px</option><option value="600" selected>600px</option><option value="650">650px</option>
+                    <option value="700">700px</option><option value="750">750px</option><option value="800">800px</option>
+                </select>
+            </div>
+            <div class="btn-group">
+                <button class="night-toggle-btn" id="nightToggleBtn">🌙 夜晚</button>
+            </div>
+        </div>
+
+        <!-- 底部資訊欄 -->
+        <div class="bottom-bar">
+            <span id="systemTimeLabel">⏱️ 系統時間: --</span>
+            <span class="status-badge" id="statusBadge">● 正常</span>
+            <span class="footer">資料來源: 政府資料一線通 · 輕鐵 Next Train API · Windy</span>
+        </div>
+    </div>
+
+    <script>
+        (function() {
+            // ============================================================
+            //  1. 站點資料
+            // ============================================================
+            const STATIONS = [
+                { id: 1, name: '屯門碼頭' }, { id: 10, name: '美樂' }, { id: 15, name: '蝴蝶' },
+                { id: 20, name: '輕鐵車廠' }, { id: 30, name: '龍門' }, { id: 40, name: '青山村' },
+                { id: 50, name: '青雲' }, { id: 60, name: '建安' }, { id: 70, name: '河田' },
+                { id: 75, name: '蔡意橋' }, { id: 80, name: '澤豐' }, { id: 90, name: '屯門醫院' },
+                { id: 100, name: '兆康' }, { id: 110, name: '麒麟' }, { id: 120, name: '青松' },
+                { id: 130, name: '建生' }, { id: 140, name: '田景' }, { id: 150, name: '良景' },
+                { id: 160, name: '新圍' }, { id: 170, name: '石排' }, { id: 180, name: '山景(北)' },
+                { id: 190, name: '山景(南)' }, { id: 200, name: '鳴琴' }, { id: 212, name: '大興(北)' },
+                { id: 220, name: '大興(南)' }, { id: 230, name: '銀圍' }, { id: 240, name: '兆禧' },
+                { id: 250, name: '屯門泳池' }, { id: 260, name: '豐景園' }, { id: 265, name: '兆麟' },
+                { id: 270, name: '安定' }, { id: 275, name: '友愛' }, { id: 280, name: '市中心' },
+                { id: 295, name: '屯門' }, { id: 300, name: '杯渡' }, { id: 310, name: '何福堂' },
+                { id: 320, name: '新墟' }, { id: 330, name: '景峰' }, { id: 340, name: '鳳地' },
+                { id: 350, name: '藍地' }, { id: 360, name: '泥圍' }, { id: 370, name: '鍾屋村' },
+                { id: 380, name: '洪水橋' }, { id: 390, name: '塘坊村' }, { id: 400, name: '屏山' },
+                { id: 425, name: '坑尾村' }, { id: 430, name: '天水圍' }, { id: 435, name: '天慈' },
+                { id: 445, name: '天耀' }, { id: 448, name: '樂湖' }, { id: 450, name: '天湖' },
+                { id: 455, name: '銀座' }, { id: 460, name: '天瑞' }, { id: 468, name: '頌富' },
+                { id: 480, name: '天富' }, { id: 490, name: '翠湖' }, { id: 500, name: '天榮' },
+                { id: 510, name: '天悅' }, { id: 520, name: '天秀' }, { id: 530, name: '濕地公園' },
+                { id: 540, name: '天恒' }, { id: 550, name: '天逸' }, { id: 560, name: '水邊圍' },
+                { id: 570, name: '豐年路' }, { id: 580, name: '康樂路' }, { id: 590, name: '大棠路' },
+                { id: 600, name: '元朗' }, { id: 920, name: '三聖' }
+            ];
+            const stationMap = {};
+            STATIONS.forEach(s => { stationMap[s.id] = s.name; });
+
+            // ============================================================
+            //  2. DOM 元素
+            // ============================================================
+            const container = document.getElementById('stationContainer');
+            const systemTimeLabel = document.getElementById('systemTimeLabel');
+            const statusBadge = document.getElementById('statusBadge');
+            const zoomSelect = document.getElementById('zoomSelect');
+            const heightSelect = document.getElementById('heightSelect');
+            const appContainer = document.getElementById('appContainer');
+            const nightToggleBtn = document.getElementById('nightToggleBtn');
+
+            // ============================================================
+            //  3. 高度 & 縮放 & 夜間模式
+            // ============================================================
+            function applyHeight(height) {
+                document.querySelectorAll('.card').forEach(c => c.style.height = height + 'px');
+            }
+            heightSelect.addEventListener('change', function() {
+                applyHeight(parseInt(this.value, 10));
+            });
+
+            function applyZoom(percent) {
+                const scale = percent / 100;
+                appContainer.style.transform = `scale(${scale})`;
+                appContainer.style.transformOrigin = 'top left';
+            }
+            zoomSelect.addEventListener('change', function() {
+                applyZoom(parseInt(this.value, 10));
+            });
+            applyZoom(100);
+
+            let isNightMode = false;
+            function toggleNightMode() {
+                isNightMode = !isNightMode;
+                document.body.classList.toggle('night-mode', isNightMode);
+                nightToggleBtn.textContent = isNightMode ? '☀️ 日間' : '🌙 夜晚';
+            }
+            nightToggleBtn.addEventListener('click', toggleNightMode);
+
+            // ============================================================
+            //  4. 輕鐵 API 輔助
+            // ============================================================
+            function formatTimeFromStr(dateStr) {
+                if (!dateStr) return '--:--:--';
+                try {
+                    const d = new Date(dateStr);
+                    if (isNaN(d)) return dateStr;
+                    return d.toLocaleTimeString('zh-HK', { hour12: false });
+                } catch (_) { return dateStr; }
+            }
+
+            function groupTrainsByPlatform(platformList) {
+                if (!platformList || !Array.isArray(platformList)) return [];
+                const result = [];
+                platformList.forEach(platform => {
+                    const platformId = platform.platform_id;
+                    const routeList = platform.route_list || [];
+                    const trains = routeList.map(train => ({ ...train, platform_id: platformId }));
+                    result.push({ platform_id: platformId, trains: trains });
+                });
+                return result;
+            }
+
+            function renderStationCardContent(stationId, data) {
+                const stationName = stationMap[stationId] || `站點 ${stationId}`;
+                const platformList = data?.platform_list || [];
+                const groups = groupTrainsByPlatform(platformList);
+
+                let html = `<div class="platforms-scroll"><div class="platforms-row">`;
+
+                if (groups.length === 0) {
+                    html += `<div class="no-train">🚫 沒有月台數據</div>`;
+                } else {
+                    groups.sort((a, b) => (a.platform_id || 0) - (b.platform_id || 0));
+                    groups.forEach(group => {
+                        const platformId = group.platform_id ?? '?';
+                        let trains = group.trains || [];
+                        const displayTrains = trains.slice(0, 2);
+                        html += `<div class="platform-block"><div class="platform-title">🛤️ 月台 ${platformId}</div><div class="train-list">`;
+                        if (displayTrains.length === 0) {
+                            html += `<div class="no-train">暫無列車到站</div>`;
+                        } else {
+                            displayTrains.forEach(train => {
+                                const isSpecial = (train.special === 1);
+                                let routeDisplay = train.route_no || '--';
+                                if (isSpecial && train.additionalInfo1) routeDisplay = train.additionalInfo1;
+                                const dest = train.dest_ch || train.dest_en || '--';
+                                let timeDisplay = train.time_ch || train.time_en || '--';
+                                if (timeDisplay === '-' || timeDisplay === '—') timeDisplay = '即將抵達';
+                                let remark = '';
+                                if (isSpecial && (train.routeRemarkChi2 || train.routeRemarkEng2)) {
+                                    remark = train.routeRemarkChi2 || train.routeRemarkEng2 || '';
+                                }
+                                html += `<div class="train-item ${isSpecial ? 'special' : ''}">
+                                    <span class="train-route">${routeDisplay}</span>
+                                    <span class="train-dest">${dest}</span>
+                                    <span class="train-time">${timeDisplay}</span>
+                                    ${remark ? `<div class="train-remark">📌 ${remark}</div>` : ''}
+                                </div>`;
+                            });
+                        }
+                        html += `</div></div>`;
+                    });
+                }
+                html += `</div></div>`;
+                return html;
+            }
+
+            async function fetchSchedule(stationId, withSpecial = 1) {
+                const url =
+                    `https://rt.data.gov.hk/v1/transport/mtr/lrt/getSchedule?station_id=${stationId}&with_special=${withSpecial}`;
+                try {
+                    const response = await fetch(url);
+                    if (!response.ok) throw new Error(`HTTP ${response.status}`);
+                    return await response.json();
+                } catch (err) {
+                    console.error(`站點 ${stationId} 請求失敗:`, err);
+                    return null;
+                }
+            }
+
+            // ============================================================
+            //  5. 天氣 API 邏輯
+            // ============================================================
+            // 你的 Cloudflare Worker 代理網址
+			const PROXY_BASE = 'https://tight-glitter-d24b.climbz254320.workers.dev/?url=';
+
+			// 原始的天氣 API 網址
+				const WEATHER_API_BASE = 'https://data.weather.gov.hk/weatherAPI/opendata/';
+
+			// 透過代理請求
+			const RHRREAD_URL = PROXY_BASE + encodeURIComponent(WEATHER_API_BASE + 'weather.php?dataType=rhrread&lang=tc');
+			const WARNSUM_URL = PROXY_BASE + encodeURIComponent(WEATHER_API_BASE + 'weather.php?dataType=warnsum&lang=tc');
+			const SWT_URL = PROXY_BASE + encodeURIComponent(WEATHER_API_BASE + 'weather.php?dataType=swt&lang=tc');
+
+            function extractTuenMunData(data) {
+                let tempVal = '--', humidityVal = '--', updateTime = '';
+                if (!data) return { temperature: tempVal, humidity: humidityVal, updateTime: updateTime };
+                if (data.updateTime) updateTime = data.updateTime;
+                if (data.temperature && data.temperature.data && Array.isArray(data.temperature.data)) {
+                    for (let item of data.temperature.data) {
+                        if (item.place && (item.place.includes('屯門') || item.place.toUpperCase().includes('TUEN MUN'))) {
+                            tempVal = item.value;
+                            break;
+                        }
+                    }
+                }
+                if (data.humidity && data.humidity.data && Array.isArray(data.humidity.data) && data.humidity.data.length > 0) {
+                    const humidityItem = data.humidity.data[0];
+                    if (humidityItem.value !== undefined && humidityItem.value !== null) {
+                        humidityVal = humidityItem.value;
+                    }
+                }
+                return { temperature: tempVal, humidity: humidityVal, updateTime: updateTime };
+            }
+
+            function getRainIconAndColor(code, type) {
+                const baseIcon = 'fas fa-cloud-rain';
+                let colorClass = 'icon-default', displayName = '暴雨';
+                if (code) {
+                    const upperCode = code.toUpperCase();
+                    if (upperCode.includes('WRAINY')) { colorClass = 'icon-rain-yellow'; displayName = '黃色暴雨'; }
+                    else if (upperCode.includes('WRAINR')) { colorClass = 'icon-rain-red'; displayName = '紅色暴雨'; }
+                    else if (upperCode.includes('WRAINB')) { colorClass = 'icon-rain-black'; displayName = '黑色暴雨'; }
+                    else if (upperCode.includes('WRAIN')) {
+                        if (type && type.includes('黃')) { colorClass = 'icon-rain-yellow'; displayName = '黃色暴雨'; }
+                        else if (type && type.includes('紅')) { colorClass = 'icon-rain-red'; displayName = '紅色暴雨'; }
+                        else if (type && type.includes('黑')) { colorClass = 'icon-rain-black'; displayName = '黑色暴雨'; }
+                        else { colorClass = 'icon-rain-yellow'; displayName = '暴雨'; }
+                    }
+                } else if (type) {
+                    if (type.includes('黃')) { colorClass = 'icon-rain-yellow'; displayName = '黃色暴雨'; }
+                    else if (type.includes('紅')) { colorClass = 'icon-rain-red'; displayName = '紅色暴雨'; }
+                    else if (type.includes('黑')) { colorClass = 'icon-rain-black'; displayName = '黑色暴雨'; }
+                }
+                return { icon: baseIcon, colorClass: colorClass, displayName: displayName };
+            }
+
+            function getTyphoonNumber(code, type) {
+                let number = '-', displayName = '熱帶氣旋';
+                if (code) {
+                    const upperCode = code.toUpperCase();
+                    if (upperCode.includes('TC1')) { number = '1'; displayName = '一號風球'; }
+                    else if (upperCode.includes('TC3')) { number = '3'; displayName = '三號風球'; }
+                    else if (upperCode.includes('TC8')) { number = '8'; displayName = '八號風球'; }
+                    else if (upperCode.includes('TC9')) { number = '9'; displayName = '九號風球'; }
+                    else if (upperCode.includes('TC10')) { number = '10'; displayName = '十號風球'; }
+                    else if (upperCode.includes('TC')) { number = 'T'; displayName = '熱帶氣旋'; }
+                } else if (type) {
+                    if (type.includes('一號')) { number = '1'; displayName = '一號風球'; }
+                    else if (type.includes('三號')) { number = '3'; displayName = '三號風球'; }
+                    else if (type.includes('八號')) { number = '8'; displayName = '八號風球'; }
+                    else if (type.includes('九號')) { number = '9'; displayName = '九號風球'; }
+                    else if (type.includes('十號')) { number = '10'; displayName = '十號風球'; }
+                }
+                return { number: number, displayName: displayName };
+            }
+
+            function parseWarnings(warnData) {
+                let rainMsg = '目前沒有暴雨警告';
+                let typhoonMsg = '目前沒有熱帶氣旋警告';
+                let rainIconInfo = { icon: 'fas fa-cloud-rain', colorClass: 'icon-default', displayName: '暴雨' };
+                let typhoonNumberInfo = { number: '-', displayName: '熱帶氣旋' };
+
+                if (!warnData) return { rainMsg, typhoonMsg, rainIconInfo, typhoonNumberInfo };
+
+                if (warnData.WRAIN) {
+                    const w = warnData.WRAIN;
+                    const code = w.code || '';
+                    const type = w.type || '';
+                    if (code && code.startsWith('WRAIN')) {
+                        const level = type || code.replace('WRAIN', '').trim() || '暴雨';
+                        rainMsg = `⚠️ ${level}`;
+                        rainIconInfo = getRainIconAndColor(code, type);
+                    } else {
+                        rainMsg = '暴雨警告已取消';
+                    }
+                } else {
+                    rainMsg = '目前沒有暴雨警告';
+                }
+
+                if (warnData.WTCSGNL) {
+                    const w = warnData.WTCSGNL;
+                    const code = w.code || '';
+                    const type = w.type || '';
+                    if (code && code.startsWith('TC')) {
+                        typhoonMsg = `🌀 ${type || code}`;
+                        typhoonNumberInfo = getTyphoonNumber(code, type);
+                    } else {
+                        typhoonMsg = `熱帶氣旋信號已取消`;
+                    }
+                } else {
+                    typhoonMsg = '目前沒有熱帶氣旋警告';
+                }
+                return { rainMsg, typhoonMsg, rainIconInfo, typhoonNumberInfo };
+            }
+
+            function parseSWT(swtData) {
+                let extraMsg = '';
+                if (swtData && swtData.swt && Array.isArray(swtData.swt)) {
+                    for (let item of swtData.swt) {
+                        if (item.desc) {
+                            const desc = item.desc;
+                            if (desc.includes('八號') || desc.includes('熱帶氣旋') || desc.includes('風暴')) {
+                                extraMsg += '🌀 ' + desc.substring(0, 60) + (desc.length > 60 ? '…' : '') + ' ';
+                            }
+                        }
+                    }
+                }
+                return extraMsg;
+            }
+
+            // ============================================================
+            //  6. 卡片獨立更新函數
+            // ============================================================
+
+            // --- 6a. 更新輕鐵卡片（每 30 秒） ---
+            let currentStationId = 90;
+            let isStationUpdating = false;
+            let stationLastUpdateTime = null;
+            let stationTimerId = null;
+
+            function updateStationUpdateInfo() {
+                const infoEl = document.querySelector('.station-card .card-footer .update-info');
+                if (infoEl && stationLastUpdateTime) {
+                    infoEl.textContent = `上次更新: ${stationLastUpdateTime.toLocaleTimeString('zh-HK')}`;
+                }
+            }
+
+            function updateStationTitle(stationId) {
+                const stationCard = document.querySelector('.station-card');
+                if (!stationCard) return;
+                const nameEl = stationCard.querySelector('.card-title');
+                if (nameEl) {
+                    const stationName = stationMap[stationId] || `站點 ${stationId}`;
+                    nameEl.innerHTML = `<i class="fas fa-train"></i> ${stationName}`;
+                }
+                const idEl = stationCard.querySelector('.card-sub');
+                if (idEl) {
+                    idEl.textContent = `ID ${stationId}`;
+                }
+            }
+
+            async function updateStationCard(stationId) {
+                if (isStationUpdating) return;
+                isStationUpdating = true;
+
+                const stationCard = document.querySelector('.station-card');
+                if (!stationCard) {
+                    isStationUpdating = false;
+                    return;
+                }
+
+                const contentArea = stationCard.querySelector('.platforms-scroll');
+                if (!contentArea) {
+                    isStationUpdating = false;
+                    return;
+                }
+
+                contentArea.innerHTML = `<div style="text-align:center;padding:20px;color:#2b6b8a;">⏳ 載入中...</div>`;
+
+                try {
+                    const data = await fetchSchedule(stationId, 1);
+                    const newContent = renderStationCardContent(stationId, data);
+                    contentArea.innerHTML = newContent;
+
+                    updateStationTitle(stationId);
+
+                    if (data && data.system_time) {
+                        systemTimeLabel.textContent = `⏱️ 系統時間: ${formatTimeFromStr(data.system_time)}`;
+                    }
+
+                    stationLastUpdateTime = new Date();
+                    updateStationUpdateInfo();
+
+                    const select = document.getElementById('stationSelectInline');
+                    if (select) {
+                        select.value = stationId;
+                    }
+
+                } catch (error) {
+                    console.error('更新輕鐵卡片失敗:', error);
+                    contentArea.innerHTML = `<div class="error-msg">⚠️ 載入失敗，請稍後重試</div>`;
+                }
+
+                isStationUpdating = false;
+            }
+
+            function startStationTimer() {
+                if (stationTimerId) clearInterval(stationTimerId);
+                stationTimerId = setInterval(() => {
+                    updateStationCard(currentStationId);
+                }, 30000);
+            }
+
+            // --- 6b. 更新天氣卡片（每 60 秒） ---
+            let isWeatherUpdating = false;
+            let weatherLastUpdateTime = null;
+            let weatherTimerId = null;
+
+            function bindWeatherDOM() {
+                return {
+                    tempDisplay: document.getElementById('tempDisplay'),
+                    humidityDisplay: document.getElementById('humidityDisplay'),
+                    weatherUpdateTime: document.getElementById('weatherUpdateTime'),
+                    rainWarnText: document.getElementById('rainWarnText'),
+                    typhoonText: document.getElementById('typhoonText'),
+                    rainIcon: document.getElementById('rainIcon'),
+                    typhoonIcon: document.getElementById('typhoonIcon'),
+                    specialTipsContainer: document.getElementById('specialTipsContainer'),
+                    clockDisplay: document.getElementById('clockDisplay')
+                };
+            }
+
+            let weatherDOM = bindWeatherDOM();
+            let clockTimer = null;
+
+            function startClock() {
+                if (clockTimer) clearInterval(clockTimer);
+                function updateClock() {
+                    const now = new Date();
+                    const h = String(now.getHours()).padStart(2, '0');
+                    const m = String(now.getMinutes()).padStart(2, '0');
+                    const s = String(now.getSeconds()).padStart(2, '0');
+                    const el = weatherDOM.clockDisplay;
+                    if (el) el.textContent = `${h}:${m}:${s}`;
+                }
+                updateClock();
+                clockTimer = setInterval(updateClock, 1000);
+            }
+
+            function updateRainIcon(element, iconInfo) {
+                if (!element) return;
+                element.innerHTML = `<i class="${iconInfo.icon} ${iconInfo.colorClass}"></i>`;
+                element.title = iconInfo.displayName;
+            }
+
+            function updateTyphoonNumber(element, numberInfo) {
+                if (!element) return;
+                element.innerHTML = `<span class="typhoon-number">${numberInfo.number}</span>`;
+                element.title = numberInfo.displayName;
+            }
+
+            function updateSpecialTips(container, tipsArray) {
+                if (!container) return;
+                if (!tipsArray || tipsArray.length === 0) {
+                    container.innerHTML = `<div class="tip-item"><i class="fas fa-info-circle"></i> 目前沒有特別天氣提示</div>`;
+                    return;
+                }
+                let html = '';
+                tipsArray.forEach(tip => {
+                    html += `<div class="tip-item"><i class="fas fa-exclamation-circle"></i> ${tip}</div>`;
+                });
+                container.innerHTML = html;
+            }
+
+            function updateWeatherUpdateInfo() {
+                const footer = document.querySelector('.weather-card .card-footer .update-info');
+                if (footer && weatherLastUpdateTime) {
+                    footer.textContent = `上次更新: ${weatherLastUpdateTime.toLocaleTimeString('zh-HK')}`;
+                }
+            }
+
+            async function updateWeatherCard() {
+                if (isWeatherUpdating) return;
+                isWeatherUpdating = true;
+
+                try {
+                    const [rhrRes, warnRes, swtRes] = await Promise.all([
+                        fetch(RHRREAD_URL),
+                        fetch(WARNSUM_URL),
+                        fetch(SWT_URL)
+                    ]);
+                    const rhrData = await rhrRes.json();
+                    const warnData = await warnRes.json();
+                    const swtData = await swtRes.json();
+
+                    weatherDOM = bindWeatherDOM();
+
+                    const { temperature, humidity, updateTime } = extractTuenMunData(rhrData);
+                    if (weatherDOM.tempDisplay) weatherDOM.tempDisplay.innerHTML = temperature + ' <small>°C</small>';
+                    if (weatherDOM.humidityDisplay) weatherDOM.humidityDisplay.innerHTML = humidity + ' <small>%</small>';
+                    if (weatherDOM.weatherUpdateTime) {
+                        if (updateTime) {
+                            weatherDOM.weatherUpdateTime.textContent = '🕒 更新: ' + updateTime.replace('T', ' ').slice(0, 19);
+                        } else {
+                            weatherDOM.weatherUpdateTime.textContent = '🕒 更新: ' + new Date().toLocaleString('zh-HK');
+                        }
+                    }
+
+                    const { rainMsg, typhoonMsg, rainIconInfo, typhoonNumberInfo } = parseWarnings(warnData);
+                    if (weatherDOM.rainWarnText) weatherDOM.rainWarnText.textContent = rainMsg;
+                    if (weatherDOM.typhoonText) weatherDOM.typhoonText.textContent = typhoonMsg;
+                    updateRainIcon(weatherDOM.rainIcon, rainIconInfo);
+                    updateTyphoonNumber(weatherDOM.typhoonIcon, typhoonNumberInfo);
+
+                    if (rhrData && rhrData.specialWxTips && Array.isArray(rhrData.specialWxTips)) {
+                        updateSpecialTips(weatherDOM.specialTipsContainer, rhrData.specialWxTips);
+                    } else {
+                        updateSpecialTips(weatherDOM.specialTipsContainer, []);
+                    }
+
+                    const extra = parseSWT(swtData);
+                    if (extra && typhoonMsg.includes('沒有')) {
+                        if (weatherDOM.typhoonText) weatherDOM.typhoonText.textContent = '🌀 ' + extra;
+                    }
+
+                    startClock();
+
+                    weatherLastUpdateTime = new Date();
+                    updateWeatherUpdateInfo();
+
+                } catch (error) {
+                    console.error('天氣更新失敗:', error);
+                    weatherDOM = bindWeatherDOM();
+                    if (weatherDOM.tempDisplay) weatherDOM.tempDisplay.innerHTML = '-- <small>°C</small>';
+                    if (weatherDOM.humidityDisplay) weatherDOM.humidityDisplay.innerHTML = '-- <small>%</small>';
+                    if (weatherDOM.rainWarnText) weatherDOM.rainWarnText.textContent = '⚠️ 無法載入數據';
+                    if (weatherDOM.typhoonText) weatherDOM.typhoonText.textContent = '⚠️ 無法載入數據';
+                    if (weatherDOM.weatherUpdateTime) weatherDOM.weatherUpdateTime.textContent = '⚠️ 更新失敗';
+                    updateRainIcon(weatherDOM.rainIcon, { icon: 'fas fa-cloud-rain', colorClass: 'icon-default', displayName: '暴雨' });
+                    updateTyphoonNumber(weatherDOM.typhoonIcon, { number: '-', displayName: '熱帶氣旋' });
+                    updateSpecialTips(weatherDOM.specialTipsContainer, []);
+                }
+
+                isWeatherUpdating = false;
+            }
+
+            function startWeatherTimer() {
+                if (weatherTimerId) clearInterval(weatherTimerId);
+                weatherTimerId = setInterval(() => {
+                    updateWeatherCard();
+                }, 60000);
+            }
+
+            // --- 6c. 更新 Windy 地圖（圖層切換 + 手動更新 + 自動更新頻率控制） ---
+            const WINDY_LAYERS = {
+                radar: { overlay: 'radar', product: 'radar', level: 'surface', label: '雷達' },
+                wind: { overlay: 'wind', product: 'ecmwf', level: 'surface', label: '風速' },
+                rain: { overlay: 'rain', product: 'ecmwf', level: 'surface', label: '雨量' }
+            };
+
+            let currentWindyLayer = 'radar';
+            let windyTimerId = null;
+            let windyLastUpdateTime = null;
+
+            function updateWindyUpdateInfo() {
+                const infoEl = document.querySelector('.windy-card .windy-footer-controls .update-info');
+                if (infoEl && windyLastUpdateTime) {
+                    const label = WINDY_LAYERS[currentWindyLayer]?.label || '雷達';
+                    infoEl.textContent = `${label} · 更新: ${windyLastUpdateTime.toLocaleTimeString('zh-HK')}`;
+                }
+            }
+
+            function updateWindyMap(layerKey) {
+                currentWindyLayer = layerKey;
+                const layerConfig = WINDY_LAYERS[layerKey];
+                if (!layerConfig) return;
+
+                const iframe = document.querySelector('.windy-card iframe');
+                if (!iframe) return;
+
+                const baseUrl = 'https://embed.windy.com/embed.html';
+                const params = new URLSearchParams({
+                    type: 'map',
+                    location: 'coordinates',
+                    metricRain: 'mm',
+                    metricTemp: '°C',
+                    metricWind: 'km/h',
+                    zoom: 9,
+                    overlay: layerConfig.overlay,
+                    product: layerConfig.product,
+                    level: layerConfig.level,
+                    lat: 22.325,
+                    lon: 114.126
+                });
+                iframe.src = baseUrl + '?' + params.toString();
+
+                windyLastUpdateTime = new Date();
+                updateWindyUpdateInfo();
+            }
+
+            function startWindyTimer(minutes) {
+                if (windyTimerId) clearInterval(windyTimerId);
+                if (minutes === 0) return;
+                const intervalMs = minutes * 60 * 1000;
+                windyTimerId = setInterval(() => {
+                    const select = document.getElementById('windyOverlaySelect');
+                    if (select) {
+                        updateWindyMap(select.value);
+                    }
+                }, intervalMs);
+            }
+
+            // ============================================================
+            //  7. 初始渲染（建立三張卡片）
+            // ============================================================
+            function buildInitialCards() {
+                const stationId = currentStationId;
+
+                let html = '';
+
+                // 左：輕鐵
+                html += `
+                    <div class="card station-card" id="stationCard">
+                        <div class="card-header">
+                            <span class="card-title"><i class="fas fa-train"></i> ${stationMap[stationId] || '屯門醫院'}</span>
+                            <span class="card-sub">ID ${stationId}</span>
+                        </div>
+                        <div class="platforms-scroll">
+                            <div style="text-align:center;padding:20px;color:#2b6b8a;">⏳ 載入中...</div>
+                        </div>
+                        <div class="card-footer">
+                            <div class="footer-row">
+                                <button class="refresh-btn" id="stationRefreshBtn"><i class="fas fa-sync-alt"></i> 更新</button>
+                                <span class="update-info" id="stationUpdateInfo">上次更新: --</span>
+                            </div>
+                            <div class="station-selector-wrap">
+                                <label for="stationSelectInline">🚉 車站</label>
+                                <select id="stationSelectInline"></select>
+                            </div>
+                        </div>
+                    </div>
+                `;
+
+                // 中：Windy 地圖
+                html += `
+                    <div class="card windy-card">
+                        <div class="card-header">
+                            <span class="card-title"><i class="fas fa-satellite"></i> 氣象衛星</span>
+                            <span class="card-sub">Windy.com</span>
+                        </div>
+                        <div class="windy-map-container">
+                            <iframe 
+                                src="https://embed.windy.com/embed.html?type=map&location=coordinates&metricRain=mm&metricTemp=°C&metricWind=km/h&zoom=9&overlay=radar&product=radar&level=surface&lat=22.325&lon=114.126"
+                                frameborder="0"
+                                allowfullscreen>
+                            </iframe>
+                        </div>
+                        <div class="windy-controls">
+                            <label for="windyOverlaySelect">🌤️ 圖層</label>
+                            <select id="windyOverlaySelect">
+                                <option value="radar" selected>雷達</option>
+                                <option value="wind">風速</option>
+                                <option value="rain">雨量</option>
+                            </select>
+                            <button class="refresh-btn" id="windyRefreshBtn"><i class="fas fa-sync-alt"></i> 更新</button>
+                        </div>
+                        <div class="windy-footer-controls">
+                            <div class="refresh-group">
+                                <label for="windyRefreshSelect">🔄 自動更新</label>
+                                <select id="windyRefreshSelect">
+                                    <option value="0">關閉</option>
+                                    <option value="10">10 分鐘</option>
+                                    <option value="30" selected>30 分鐘</option>
+                                    <option value="60">60 分鐘</option>
+                                </select>
+                            </div>
+                            <span class="update-info" id="windyUpdateInfo">雷達 · 更新: --</span>
+                        </div>
+                    </div>
+                `;
+
+                // 右：天氣
+                html += `
+                    <div class="card weather-card" id="weatherCard">
+                        <div class="card-header">
+                            <span class="card-title"><i class="fas fa-cloud-sun"></i> 即時天氣</span>
+                            <span class="card-sub"><i class="far fa-clock"></i> 屯門</span>
+                        </div>
+                        <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:6px;flex-shrink:0;">
+                            <span style="font-size:.65rem;color:#1f4b6e;transition:color .3s ease;"><i class="fas fa-map-pin"></i> 自動氣象站</span>
+                            <span class="weather-update-time" id="weatherUpdateTime" style="font-size:.65rem;color:#3e5f78;transition:color .3s ease;"><i class="far fa-calendar-alt"></i> 更新: --</span>
+                        </div>
+                        <div class="weather-clock" id="weatherClock">
+                            <span class="clock-icon"><i class="far fa-clock"></i></span>
+                            <span id="clockDisplay">--:--:--</span>
+                        </div>
+                        <div class="weather-grid">
+                            <div class="weather-info-box">
+                                <div class="label"><i class="fas fa-thermometer-half"></i> 氣溫</div>
+                                <div class="value" id="tempDisplay">-- <small>°C</small></div>
+                            </div>
+                            <div class="weather-info-box">
+                                <div class="label"><i class="fas fa-tint"></i> 相對濕度</div>
+                                <div class="value" id="humidityDisplay">-- <small>%</small></div>
+                            </div>
+                        </div>
+                        <div class="weather-warning-area">
+                            <h3><i class="fas fa-exclamation-triangle"></i> 惡劣天氣監測</h3>
+                            <div id="rainWarnBlock" class="weather-msg-block">
+                                <span class="icon-large" id="rainIcon"><i class="fas fa-cloud-rain icon-default"></i></span>
+                                <div class="msg-text"><p id="rainWarnText">載入暴雨警告...</p></div>
+                            </div>
+                            <div id="typhoonBlock" class="weather-msg-block" style="margin-top:4px;">
+                                <span class="icon-large" id="typhoonIcon"><span class="typhoon-number">-</span></span>
+                                <div class="msg-text"><p id="typhoonText">載入熱帶氣旋消息...</p></div>
+                            </div>
+                            <div id="specialTipsContainer" class="special-tips-container"></div>
+                        </div>
+                        <div class="card-footer">
+                            <div class="footer-row">
+                                <button class="refresh-btn" id="weatherRefreshBtn"><i class="fas fa-sync-alt"></i> 更新</button>
+                                <span class="update-info" id="weatherUpdateInfo">上次更新: --</span>
+                            </div>
+                        </div>
+                    </div>
+                `;
+
+                container.innerHTML = html;
+
+                // 初始化站點選擇器
+                const select = document.getElementById('stationSelectInline');
+                STATIONS.forEach(s => {
+                    const opt = document.createElement('option');
+                    opt.value = s.id;
+                    opt.textContent = `${s.name} (${s.id})`;
+                    select.appendChild(opt);
+                });
+                select.value = currentStationId;
+
+                select.addEventListener('change', function() {
+                    const newId = parseInt(this.value, 10);
+                    if (newId !== currentStationId) {
+                        currentStationId = newId;
+                        updateStationTitle(newId);
+                        updateStationCard(newId);
+                    }
+                });
+
+                // 重新綁定天氣 DOM
+                weatherDOM = bindWeatherDOM();
+                startClock();
+
+                const currentHeight = parseInt(heightSelect.value, 10);
+                applyHeight(currentHeight);
+
+                // 綁定各卡片刷新按鈕
+                document.getElementById('stationRefreshBtn').addEventListener('click', function() {
+                    updateStationCard(currentStationId);
+                });
+                document.getElementById('weatherRefreshBtn').addEventListener('click', function() {
+                    updateWeatherCard();
+                });
+
+                // 綁定 Windy 圖層切換與刷新
+                const overlaySelect = document.getElementById('windyOverlaySelect');
+                overlaySelect.addEventListener('change', function() {
+                    updateWindyMap(this.value);
+                });
+
+                document.getElementById('windyRefreshBtn').addEventListener('click', function() {
+                    const select = document.getElementById('windyOverlaySelect');
+                    if (select) {
+                        updateWindyMap(select.value);
+                    }
+                });
+
+                const refreshSelect = document.getElementById('windyRefreshSelect');
+                refreshSelect.addEventListener('change', function() {
+                    const minutes = parseInt(this.value, 10);
+                    startWindyTimer(minutes);
+                });
+
+                // 初次載入數據
+                updateStationCard(currentStationId);
+                updateWeatherCard();
+                updateWindyMap('radar');
+
+                startStationTimer();
+                startWeatherTimer();
+
+                const defaultMinutes = parseInt(refreshSelect.value, 10);
+                startWindyTimer(defaultMinutes);
+            }
+
+            // ============================================================
+            //  8. 初始化
+            // ============================================================
+            buildInitialCards();
+
+            window.addEventListener('beforeunload', function() {
+                if (stationTimerId) clearInterval(stationTimerId);
+                if (weatherTimerId) clearInterval(weatherTimerId);
+                if (windyTimerId) clearInterval(windyTimerId);
+                if (clockTimer) clearInterval(clockTimer);
+            });
+
+        })();
+    </script>
+</body>
+</html>
